@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> 我的就诊记录</h5>
+                <a href="{% url 'patient_dashboard' %}" class="btn btn-sm btn-outline-secondary">返回</a>
+            </div>
+            <div class="card-body">
+                {% if visits %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>就诊编号</th>
+                                <th>就诊时间</th>
+                                <th>科室</th>
+                                <th>医生</th>
+                                <th>主诉</th>
+                                <th>诊断</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for visit in visits %}
+                            <tr>
+                                <td>{{ visit.visit_no }}</td>
+                                <td>{{ visit.visit_time|date:"Y-m-d H:i" }}</td>
+                                <td>{{ visit.department|default:"未指定" }}</td>
+                                <td>{{ visit.doctor.name|default:"未指定" }}</td>
+                                <td>{{ visit.chief_complaint|default:"无"|truncatewords:5 }}</td>
+                                <td>{{ visit.diagnosis|default:"未诊断"|truncatewords:5 }}</td>
+                                <td>
+                                    {% if visit.status == 'open' %}
+                                        <span class="badge bg-warning">进行中</span>
+                                    {% elif visit.status == 'closed' %}
+                                        <span class="badge bg-success">已完成</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">已取消</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'patient_detail' visit.patient.id %}" class="btn btn-sm btn-outline-info">查看详情</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-5">暂无就诊记录</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

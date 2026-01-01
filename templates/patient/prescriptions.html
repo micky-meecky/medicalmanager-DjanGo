@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-medical"></i> 我的处方</h5>
+                <a href="{% url 'patient_dashboard' %}" class="btn btn-sm btn-outline-secondary">返回</a>
+            </div>
+            <div class="card-body">
+                {% if prescriptions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>处方编号</th>
+                                <th>就诊时间</th>
+                                <th>开方医生</th>
+                                <th>开具时间</th>
+                                <th>发药时间</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rx in prescriptions %}
+                            <tr>
+                                <td>{{ rx.prescription_no }}</td>
+                                <td>{{ rx.visit.visit_time|date:"Y-m-d H:i" }}</td>
+                                <td>{{ rx.doctor.name|default:"未指定" }}</td>
+                                <td>{{ rx.issued_at|date:"Y-m-d H:i"|default:"未开具" }}</td>
+                                <td>{{ rx.dispensed_at|date:"Y-m-d H:i"|default:"未发药" }}</td>
+                                <td>
+                                    {% if rx.status == 'draft' %}
+                                        <span class="badge bg-secondary">草稿</span>
+                                    {% elif rx.status == 'issued' %}
+                                        <span class="badge bg-warning">已开具</span>
+                                    {% elif rx.status == 'dispensed' %}
+                                        <span class="badge bg-success">已发药</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">已取消</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'patient_prescription_detail' rx.id %}" class="btn btn-sm btn-outline-info">查看详情</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-5">暂无处方记录</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

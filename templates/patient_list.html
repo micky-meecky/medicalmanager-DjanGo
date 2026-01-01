@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="m-0 font-weight-bold text-primary">患者档案列表</h5>
+        <button class="btn btn-primary btn-sm"><i class="bi bi-person-plus"></i> 新建档案</button>
+    </div>
+    <div class="card-body">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>编号</th>
+                    <th>姓名</th>
+                    <th>性别</th>
+                    <th>年龄</th>
+                    <th>电话</th>
+                    <th>最近就诊</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in patients %}
+                <tr>
+                    <td><span class="badge bg-secondary">{{ p.patient_no }}</span></td>
+                    <td class="fw-bold">{{ p.name }}</td>
+                    <td>
+                        {% if p.gender == 'M' %}<span class="text-primary"><i class="bi bi-gender-male"></i> 男</span>
+                        {% else %}<span class="text-danger"><i class="bi bi-gender-female"></i> 女</span>{% endif %}
+                    </td>
+                    <td>{{ p.age }}岁</td> <td>{{ p.phone }}</td>
+                    <td>2025-01-01</td> <td>
+                        <a href="{% url 'patient_detail' p.id %}" class="btn btn-sm btn-outline-info">详情</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

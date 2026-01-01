@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'patient_list' %}">患者列表</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ patient.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 border-top border-4 border-info">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        {% if patient.gender == 'M' %}
+                            <i class="bi bi-person-circle text-primary" style="font-size: 4rem;"></i>
+                        {% else %}
+                            <i class="bi bi-person-circle text-danger" style="font-size: 4rem;"></i>
+                        {% endif %}
+                    </div>
+                    <h4>{{ patient.name }}</h4>
+                    <p class="text-muted">{{ patient.patient_no }}</p>
+                    <hr>
+                    <div class="text-start">
+                        <p><strong><i class="bi bi-cake2"></i> 年龄：</strong> {{ patient.age }} 岁</p>
+                        <p><strong><i class="bi bi-telephone"></i> 电话：</strong> {{ patient.phone }}</p>
+                        <p><strong><i class="bi bi-card-heading"></i> 身份证：</strong> {{ patient.id_number }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white fw-bold">
+                    <i class="bi bi-file-medical-fill text-success"></i> 健康档案
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="text-muted small">既往病史</label>
+                        <p class="fw-bold">{{ patient.medical_history|default:"无" }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-muted small">过敏史</label>
+                        <p class="fw-bold text-danger">{{ patient.allergy_history|default:"无" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white fw-bold d-flex justify-content-between">
+                    <span><i class="bi bi-clock-history text-warning"></i> 历史就诊记录</span>
+                    <button class="btn btn-sm btn-outline-primary">+ 新增就诊</button>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted text-center py-3">暂无显示的记录（后续我们会把 Visit 表连过来）</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

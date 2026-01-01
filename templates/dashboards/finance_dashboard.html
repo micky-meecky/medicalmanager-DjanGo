@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h6>今日待支付</h6>
+                <h3>{{ today_unpaid.count }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h6>今日收入</h6>
+                <h3>¥{{ today_payments|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h6>最近支付</h6>
+                <h3>{{ recent_payments.count }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-receipt"></i> 今日待支付发票</h5>
+            </div>
+            <div class="card-body">
+                {% if today_unpaid %}
+                <div class="list-group">
+                    {% for invoice in today_unpaid %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <strong>{{ invoice.invoice_no }}</strong>
+                                <small class="text-muted d-block">{{ invoice.patient.name }}</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold text-primary">¥{{ invoice.total_amount|floatformat:2 }}</div>
+                                <a href="#" class="btn btn-sm btn-success mt-1">收款</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">今日暂无待支付发票</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-cash-coin"></i> 最近支付记录</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_payments %}
+                <div class="list-group">
+                    {% for payment in recent_payments %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <strong>{{ payment.invoice.invoice_no }}</strong>
+                                <small class="text-muted d-block">{{ payment.paid_at|date:"Y-m-d H:i" }}</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold text-success">¥{{ payment.amount|floatformat:2 }}</div>
+                                <small class="text-muted">{{ payment.get_method_display }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">暂无支付记录</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

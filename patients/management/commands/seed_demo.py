@@ -218,15 +218,22 @@ class Command(BaseCommand):
         for staff_no, name, role, dept, position, specialty in STAFF_TEMPLATES:
             # 创建或获取 User
             username = f"staff_{staff_no.lower()}"
+            # 管理员需要 is_superuser=True 才能访问 Django Admin
+            is_admin = (role == 'admin')
             user, _ = User.objects.get_or_create(
                 username=username,
                 defaults=dict(
                     email=f"{username}@hospital.com",
                     first_name=name,
                     is_staff=True,
+                    is_superuser=is_admin,  # 只有管理员是超级用户
                     is_active=True,
                 ),
             )
+            # 如果用户已存在，更新管理员权限
+            if is_admin and not user.is_superuser:
+                user.is_superuser = True
+                user.save()
             if not user.check_password("123456"):  # 默认密码
                 user.set_password("123456")
                 user.save()
@@ -318,14 +325,34 @@ class Command(BaseCommand):
             if Patient.objects.filter(patient_no=patient_no).exists():
                 patient_no = f"P{random.randint(10000, 99999)}"
 
+            # 生成患者姓名（只生成一次）
+            patient_name = gen_name()
+            
             # 生成紧急联系人信息（70%概率有紧急联系人）
             has_emergency = random.random() < 0.7
             emergency_contact = gen_name() if has_emergency else ""
             emergency_phone = gen_phone() if has_emergency else ""
             
+            # 创建患者用户账号（30%概率创建登录账号）
+            patient_user = None
+            if random.random() < 0.3:
+                username = f"patient_{patient_no.lower()}"
+                patient_user, _ = User.objects.get_or_create(
+                    username=username,
+                    defaults=dict(
+                        email=f"{username}@hospital.com",
+                        first_name=patient_name,
+                        is_active=True,
+                    ),
+                )
+                if not patient_user.check_password("123456"):
+                    patient_user.set_password("123456")
+                    patient_user.save()
+            
             patient = Patient.objects.create(
+                user=patient_user,
                 patient_no=patient_no,
-                name=gen_name(),
+                name=patient_name,
                 gender=random.choice(["M", "F"]),
                 date_of_birth=birth,
                 phone=gen_phone(),

@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h6>待发药处方</h6>
+                <h3>{{ pending_prescriptions.count }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h6>低库存药品</h6>
+                <h3>{{ low_stock.count }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h6>药品总数</h6>
+                <h3>{{ total_drugs }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-capsule"></i> 待发药处方</h5>
+            </div>
+            <div class="card-body">
+                {% if pending_prescriptions %}
+                <div class="list-group">
+                    {% for rx in pending_prescriptions %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <strong>{{ rx.prescription_no }}</strong>
+                                <small class="text-muted d-block">{{ rx.visit.patient.name }}</small>
+                            </div>
+                            <a href="#" class="btn btn-sm btn-primary">发药</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">暂无待发药处方</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> 低库存预警</h5>
+            </div>
+            <div class="card-body">
+                {% if low_stock %}
+                <div class="list-group">
+                    {% for inv in low_stock %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <strong>{{ inv.drug.name }}</strong>
+                                <small class="text-muted d-block">当前库存：{{ inv.quantity }} | 预警线：{{ inv.warning_level }}</small>
+                            </div>
+                            <span class="badge bg-danger">低库存</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">库存充足</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

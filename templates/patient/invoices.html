@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-receipt"></i> 我的账单/发票</h5>
+                <a href="{% url 'patient_dashboard' %}" class="btn btn-sm btn-outline-secondary">返回</a>
+            </div>
+            <div class="card-body">
+                {% if invoices %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>发票编号</th>
+                                <th>就诊时间</th>
+                                <th>开票时间</th>
+                                <th>总金额</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for invoice in invoices %}
+                            <tr>
+                                <td>{{ invoice.invoice_no }}</td>
+                                <td>{{ invoice.visit.visit_time|date:"Y-m-d H:i" }}</td>
+                                <td>{{ invoice.issued_at|date:"Y-m-d H:i"|default:"未开票" }}</td>
+                                <td class="fw-bold">¥{{ invoice.total_amount|floatformat:2 }}</td>
+                                <td>
+                                    {% if invoice.status == 'unpaid' %}
+                                        <span class="badge bg-warning">未支付</span>
+                                    {% elif invoice.status == 'paid' %}
+                                        <span class="badge bg-success">已支付</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">已退款</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'patient_invoice_detail' invoice.id %}" class="btn btn-sm btn-outline-info">查看详情</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-5">暂无账单记录</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

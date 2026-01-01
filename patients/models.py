@@ -1,4 +1,6 @@
+from datetime import date
 from django.db import models
+from django.contrib.auth.models import User
 
 
 """
@@ -71,6 +73,8 @@ class Patient(models.Model):
         ("O", "Other"),
     ]
 
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="patient_profile", null=True, blank=True)   # 用户账号，一对一关系，可选
+    
     patient_no = models.CharField(max_length=32, unique=True)   # 患者编号，唯一
     name = models.CharField(max_length=64)   # 姓名
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES)   # 性别，可选
@@ -91,6 +95,14 @@ class Patient(models.Model):
 
     def __str__(self):
         return f"{self.patient_no} - {self.name}"   # 返回患者编号和患者姓名
+
+    @property
+    def age(self):
+        if not self.date_of_birth:
+            return "未知"
+        today = date.today()
+        # 算法：今年减去年，如果还没过生日就再减1
+        return today.year - self.date_of_birth.year - ((today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day))
 
 
 class Visit(models.Model):  
