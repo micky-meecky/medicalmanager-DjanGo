@@ -36,7 +36,11 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
+    'django.contrib.staticfiles',   # 静态文件模块
+    "patients",     # 患者模块
+    "staff",        # 职工模块
+    "pharmacy",     # 药房模块
+    "finance",      # 财务模块  
 ]
 
 MIDDLEWARE = [
@@ -74,8 +78,15 @@ WSGI_APPLICATION = 'hospital_core.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        "ENGINE": "django.db.backends.mysql",   # 对数据库的引擎进行设置，使用mysql数据库
+        "NAME": "medicalmanager",   # 对数据库的名称进行设置，使用medicalmanager数据库
+        "USER": "mm_user",   # 使用mm_user用户
+        "PASSWORD": "123456",   # 使用123456密码
+        "HOST": "127.0.0.1",   # 使用127.0.0.1地址
+        "PORT": "3306",   # 使用3306端口
+        "OPTIONS": {
+            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",   # 使用STRICT_TRANS_TABLES选项，通俗点说就是严格模式，防止数据丢失
+        },
     }
 }
 
