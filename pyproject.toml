@@ -1,0 +1,11 @@
+[project]
+name = "medicalmanager-django"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "django>=6.0",
+    "django-simpleui>=2025.6.24",
+    "mysqlclient>=2.2.7",
+]
