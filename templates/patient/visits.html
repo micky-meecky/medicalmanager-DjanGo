@@ -43,7 +43,7 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <a href="{% url 'patient_detail' visit.patient.id %}" class="btn btn-sm btn-outline-info">查看详情</a>
+                                    <a href="{% url 'patient_visit_detail' visit.id %}" class="btn btn-sm btn-outline-info">查看详情</a>
                                 </td>
                             </tr>
                             {% endfor %}

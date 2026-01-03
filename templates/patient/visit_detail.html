@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 offset-md-1">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> 就诊详情</h5>
+                <a href="{% url 'patient_visits' %}" class="btn btn-sm btn-outline-secondary">返回</a>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">基本信息</h6>
+                        <p><strong>就诊编号：</strong>{{ visit.visit_no }}</p>
+                        <p><strong>就诊时间：</strong>{{ visit.visit_time|date:"Y-m-d H:i" }}</p>
+                        <p><strong>就诊科室：</strong>{{ visit.department|default:"未指定" }}</p>
+                        <p><strong>接诊医生：</strong>{{ visit.doctor.name|default:"未指定" }}</p>
+                        <p><strong>就诊状态：</strong>
+                            {% if visit.status == 'open' %}
+                                <span class="badge bg-warning">进行中</span>
+                            {% elif visit.status == 'closed' %}
+                                <span class="badge bg-success">已完成</span>
+                            {% else %}
+                                <span class="badge bg-secondary">已取消</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">复诊信息</h6>
+                        {% if visit.next_visit_date %}
+                            <p><strong>建议复诊日期：</strong>{{ visit.next_visit_date|date:"Y-m-d" }}</p>
+                        {% else %}
+                            <p><strong>建议复诊日期：</strong>未指定</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="mb-3">
+                    <h6 class="text-muted">主诉</h6>
+                    <p>{{ visit.chief_complaint|default:"无"|linebreaks }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-muted">诊断</h6>
+                    <p>{{ visit.diagnosis|default:"未诊断"|linebreaks }}</p>
+                </div>
+                
+                {% if visit.notes %}
+                <div class="mb-3">
+                    <h6 class="text-muted">备注</h6>
+                    <p>{{ visit.notes|linebreaks }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if prescription %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-medical"></i> 关联处方</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>处方编号：</strong>{{ prescription.prescription_no }}</p>
+                <p><strong>开方医生：</strong>{{ prescription.doctor.name|default:"未指定" }}</p>
+                <p><strong>处方状态：</strong>
+                    {% if prescription.status == 'draft' %}
+                        <span class="badge bg-secondary">草稿</span>
+                    {% elif prescription.status == 'issued' %}
+                        <span class="badge bg-warning">已开具</span>
+                    {% elif prescription.status == 'dispensed' %}
+                        <span class="badge bg-success">已发药</span>
+                    {% else %}
+                        <span class="badge bg-danger">已取消</span>
+                    {% endif %}
+                </p>
+                <a href="{% url 'patient_prescription_detail' prescription.id %}" class="btn btn-sm btn-outline-info mt-2">查看处方详情</a>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if invoice %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-receipt"></i> 关联账单</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>发票编号：</strong>{{ invoice.invoice_no }}</p>
+                <p><strong>总金额：</strong><span class="h5 text-primary">¥{{ invoice.total_amount|floatformat:2 }}</span></p>
+                <p><strong>账单状态：</strong>
+                    {% if invoice.status == 'unpaid' %}
+                        <span class="badge bg-warning">未支付</span>
+                    {% elif invoice.status == 'paid' %}
+                        <span class="badge bg-success">已支付</span>
+                    {% else %}
+                        <span class="badge bg-danger">已退款</span>
+                    {% endif %}
+                </p>
+                <a href="{% url 'patient_invoice_detail' invoice.id %}" class="btn btn-sm btn-outline-info mt-2">查看账单详情</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

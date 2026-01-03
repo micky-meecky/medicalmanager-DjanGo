@@ -129,3 +129,75 @@ class Visit(models.Model):
 
     def __str__(self):
         return f"{self.visit_no} ({self.patient.name})"   # 返回就诊编号和患者姓名
+
+
+class Appointment(models.Model):
+    """预约挂号模型"""
+    STATUS_CHOICES = [
+        ("pending", "Pending"),   # 待确认
+        ("confirmed", "Confirmed"),   # 已确认
+        ("completed", "Completed"),   # 已完成
+        ("cancelled", "Cancelled"),   # 已取消
+    ]
+    
+    appointment_no = models.CharField(max_length=32, unique=True)   # 预约编号，唯一
+    patient = models.ForeignKey(Patient, on_delete=models.PROTECT, related_name="appointments")   # 患者，外键
+    doctor = models.ForeignKey('staff.StaffProfile', on_delete=models.PROTECT, related_name="appointments", null=True, blank=True)   # 预约医生，外键，可选
+    department = models.CharField(max_length=64, blank=True, default="")   # 预约科室，可选
+    
+    appointment_date = models.DateField()   # 预约日期
+    appointment_time = models.TimeField()   # 预约时间
+    reason = models.TextField(blank=True, default="")   # 预约原因/症状描述，可选
+    
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default="pending")   # 预约状态，可选
+    notes = models.TextField(blank=True, default="")   # 备注，可选
+    
+    created_at = models.DateTimeField(auto_now_add=True)   # 创建时间，自动添加
+    updated_at = models.DateTimeField(auto_now=True)   # 更新时间，自动更新
+    
+    class Meta:
+        ordering = ['-appointment_date', '-appointment_time']   # 按预约日期和时间倒序排列
+    
+    def __str__(self):
+        return f"{self.appointment_no} - {self.patient.name} ({self.appointment_date})"   # 返回预约编号、患者姓名和预约日期
+
+
+class MedicalReport(models.Model):
+    """检查报告模型"""
+    REPORT_TYPE_CHOICES = [
+        ("blood", "Blood Test"),   # 血常规
+        ("urine", "Urine Test"),   # 尿常规
+        ("xray", "X-Ray"),   # X光
+        ("ct", "CT Scan"),   # CT扫描
+        ("mri", "MRI"),   # 核磁共振
+        ("ultrasound", "Ultrasound"),   # 超声
+        ("ecg", "ECG"),   # 心电图
+        ("other", "Other"),   # 其他
+    ]
+    
+    report_no = models.CharField(max_length=32, unique=True)   # 报告编号，唯一
+    patient = models.ForeignKey(Patient, on_delete=models.PROTECT, related_name="reports")   # 患者，外键
+    visit = models.ForeignKey(Visit, on_delete=models.PROTECT, related_name="reports", null=True, blank=True)   # 关联就诊记录，外键，可选
+    doctor = models.ForeignKey('staff.StaffProfile', on_delete=models.PROTECT, related_name="reports", null=True, blank=True)   # 开单医生，外键，可选
+    
+    report_type = models.CharField(max_length=32, choices=REPORT_TYPE_CHOICES, default="other")   # 报告类型，可选
+    title = models.CharField(max_length=128)   # 报告标题/检查项目名称
+    department = models.CharField(max_length=64, blank=True, default="")   # 检查科室，可选
+    
+    examination_date = models.DateField()   # 检查日期
+    report_date = models.DateField(null=True, blank=True)   # 报告日期，可选
+    
+    findings = models.TextField(blank=True, default="")   # 检查所见/结果，可选
+    conclusion = models.TextField(blank=True, default="")   # 诊断结论/建议，可选
+    notes = models.TextField(blank=True, default="")   # 备注，可选
+    
+    attachment = models.FileField(upload_to='reports/', blank=True, null=True)   # 报告附件（PDF/图片），可选
+    
+    created_at = models.DateTimeField(auto_now_add=True)   # 创建时间，自动添加
+    updated_at = models.DateTimeField(auto_now=True)   # 更新时间，自动更新
+    
+    class Meta:
+        ordering = ['-examination_date', '-created_at']   # 按检查日期和创建时间倒序排列
+    
+    def __str__(self):
+        return f"{self.report_no} - {self.title} ({self.patient.name})"   # 返回报告编号、标题和患者姓名

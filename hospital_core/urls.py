@@ -19,6 +19,6 @@ from django.urls import path, include  # 记得加 include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('staff.urls')),  # 认证和仪表板路由
+    path('', include('staff.urls')),  # 主页、认证和仪表板路由
     path('patients/', include('patients.urls')), 
 ]

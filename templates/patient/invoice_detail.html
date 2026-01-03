@@ -38,6 +38,14 @@
                     <strong>备注：</strong>{{ invoice.notes }}
                 </div>
                 {% endif %}
+                
+                {% if invoice.status == 'unpaid' %}
+                <div class="text-center mt-3">
+                    <a href="{% url 'patient_payment' invoice.id %}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-credit-card"></i> 立即支付
+                    </a>
+                </div>
+                {% endif %}
             </div>
         </div>
         

@@ -5,6 +5,67 @@ from django.contrib.auth.decorators import login_required
 from .decorators import get_user_role, get_user_profile, role_required
 
 
+def home(request):
+    """医院主页"""
+    return render(request, 'home.html')
+
+
+def patient_register(request):
+    """患者注册视图"""
+    from django.contrib.auth.models import User
+    from patients.models import Patient
+    from django.db import transaction
+    import random
+    import string
+    
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+        
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        confirm_password = request.POST.get('confirm_password')
+        name = request.POST.get('name')
+        phone = request.POST.get('phone')
+        
+        if password != confirm_password:
+            messages.error(request, '两次输入的密码不一致。')
+            return render(request, 'home.html', {'show_register': True})
+            
+        if User.objects.filter(username=username).exists():
+            messages.error(request, '用户名已存在。')
+            return render(request, 'home.html', {'show_register': True})
+            
+        try:
+            with transaction.atomic():
+                # 创建 User
+                user = User.objects.create_user(username=username, password=password)
+                
+                # 生成患者编号 P + 年月日 + 4位随机数
+                from django.utils import timezone
+                patient_no = f"P{timezone.now().strftime('%Y%m%d')}{''.join(random.choices(string.digits, k=4))}"
+                while Patient.objects.filter(patient_no=patient_no).exists():
+                    patient_no = f"P{timezone.now().strftime('%Y%m%d')}{''.join(random.choices(string.digits, k=4))}"
+                
+                # 创建 Patient 档案
+                Patient.objects.create(
+                    user=user,
+                    patient_no=patient_no,
+                    name=name,
+                    phone=phone
+                )
+                
+                # 登录
+                login(request, user)
+                messages.success(request, f'注册成功！欢迎来到约翰·霍普金斯医院，{name}。您的患者编号是 {patient_no}')
+                return redirect('patient_dashboard')
+        except Exception as e:
+            messages.error(request, f'注册失败：{str(e)}')
+            return render(request, 'home.html', {'show_register': True})
+            
+    return redirect('home')
+
+
 def login_view(request):
     """
     登录视图
@@ -20,7 +81,7 @@ def login_view(request):
         
         if not username or not password:
             messages.error(request, '请输入用户名和密码。')
-            return render(request, 'auth/login.html')
+            return render(request, 'home.html', {'show_login': True})
         
         # 使用 Django 的认证系统
         user = authenticate(request, username=username, password=password)
@@ -29,7 +90,7 @@ def login_view(request):
             # 检查用户是否被禁用
             if not user.is_active:
                 messages.error(request, '您的账号已被禁用，请联系管理员。')
-                return render(request, 'auth/login.html')
+                return render(request, 'home.html', {'show_login': True})
             
             # 登录用户
             login(request, user)
@@ -43,7 +104,7 @@ def login_view(request):
                 if not profile.is_active:
                     logout(request)
                     messages.error(request, '您的职工账号已被停用，请联系管理员。')
-                    return render(request, 'auth/login.html')
+                    return render(request, 'home.html', {'show_login': True})
             
             messages.success(request, f'欢迎回来，{user.username}！')
             
@@ -51,8 +112,11 @@ def login_view(request):
             return redirect('dashboard')
         else:
             messages.error(request, '用户名或密码错误。')
+            return render(request, 'home.html', {'show_login': True})
     
-    return render(request, 'auth/login.html')
+    # GET 请求，如果是从登录链接来的，显示登录表单
+    show_login = request.GET.get('login', False)
+    return render(request, 'home.html', {'show_login': show_login})
 
 
 @login_required
@@ -60,7 +124,7 @@ def logout_view(request):
     """登出视图"""
     logout(request)
     messages.success(request, '您已成功登出。')
-    return redirect('login')
+    return redirect('home')
 
 
 @login_required
@@ -83,7 +147,7 @@ def dashboard(request):
         return redirect('admin_dashboard')
     else:
         messages.warning(request, '您的账号未关联任何角色，请联系管理员。')
-        return redirect('login')
+        return redirect('home')
 
 
 @login_required
@@ -158,6 +222,41 @@ def patient_visits(request):
         'visits': visits,
     }
     return render(request, 'patient/visits.html', context)
+
+
+@login_required
+@role_required('patient')
+def patient_visit_detail(request, visit_id):
+    """患者查看就诊详情（患者专用，确保只能查看自己的就诊记录）"""
+    from patients.models import Visit
+    from pharmacy.models import Prescription
+    from finance.models import Invoice
+    from django.shortcuts import get_object_or_404
+    
+    patient = get_user_profile(request.user)
+    # 确保只能查看自己的就诊记录
+    visit = get_object_or_404(
+        Visit,
+        id=visit_id,
+        patient=patient
+    )
+    
+    # 获取关联的处方和发票
+    prescription = None
+    if hasattr(visit, 'prescription'):
+        prescription = visit.prescription
+    
+    invoice = None
+    if hasattr(visit, 'invoice'):
+        invoice = visit.invoice
+    
+    context = {
+        'patient': patient,
+        'visit': visit,
+        'prescription': prescription,
+        'invoice': invoice,
+    }
+    return render(request, 'patient/visit_detail.html', context)
 
 
 @login_required
@@ -249,6 +348,255 @@ def patient_invoice_detail(request, invoice_id):
         'payments': payments,
     }
     return render(request, 'patient/invoice_detail.html', context)
+
+
+@login_required
+@role_required('patient')
+def patient_payment(request, invoice_id):
+    """患者支付账单"""
+    from finance.models import Invoice, Payment
+    from django.shortcuts import get_object_or_404
+    from django.contrib import messages
+    from django.utils import timezone
+    from decimal import Decimal
+    
+    patient = get_user_profile(request.user)
+    invoice = get_object_or_404(
+        Invoice,
+        id=invoice_id,
+        patient=patient
+    )
+    
+    # 检查账单状态
+    if invoice.status == 'paid':
+        messages.warning(request, '该账单已支付，无需重复支付。')
+        return redirect('patient_invoice_detail', invoice_id=invoice_id)
+    elif invoice.status == 'refunded':
+        messages.warning(request, '该账单已退款，无法支付。')
+        return redirect('patient_invoice_detail', invoice_id=invoice_id)
+    
+    # 计算已支付金额和待支付金额
+    paid_amount = sum(payment.amount for payment in invoice.payments.all())
+    remaining_amount = invoice.total_amount - Decimal(str(paid_amount))
+    
+    if request.method == 'POST':
+        payment_method = request.POST.get('payment_method')
+        payment_amount = request.POST.get('payment_amount')
+        
+        if not payment_method:
+            messages.error(request, '请选择支付方式。')
+            return render(request, 'patient/payment.html', {
+                'patient': patient,
+                'invoice': invoice,
+                'paid_amount': paid_amount,
+                'remaining_amount': remaining_amount,
+            })
+        
+        try:
+            payment_amount = Decimal(payment_amount)
+            if payment_amount <= 0:
+                messages.error(request, '支付金额必须大于0。')
+                return render(request, 'patient/payment.html', {
+                    'patient': patient,
+                    'invoice': invoice,
+                    'paid_amount': paid_amount,
+                    'remaining_amount': remaining_amount,
+                })
+            
+            if payment_amount > remaining_amount:
+                messages.error(request, f'支付金额不能超过待支付金额 ¥{remaining_amount}。')
+                return render(request, 'patient/payment.html', {
+                    'patient': patient,
+                    'invoice': invoice,
+                    'paid_amount': paid_amount,
+                    'remaining_amount': remaining_amount,
+                })
+            
+            # 创建支付记录
+            # 注意：这里只是记录支付，实际支付需要对接第三方支付平台
+            Payment.objects.create(
+                invoice=invoice,
+                amount=payment_amount,
+                method=payment_method,
+                note=f'患者在线支付 - {request.POST.get("payment_method_display", "")}',
+            )
+            
+            # 更新已支付金额
+            new_paid_amount = sum(payment.amount for payment in invoice.payments.all())
+            
+            # 如果已全额支付，更新发票状态
+            if new_paid_amount >= invoice.total_amount:
+                invoice.status = 'paid'
+                invoice.paid_at = timezone.now()
+                invoice.save()
+                messages.success(request, f'支付成功！账单已全额支付。')
+            else:
+                messages.success(request, f'支付成功！已支付 ¥{payment_amount}，剩余待支付 ¥{invoice.total_amount - new_paid_amount}。')
+            
+            return redirect('patient_invoice_detail', invoice_id=invoice_id)
+            
+        except ValueError:
+            messages.error(request, '支付金额格式错误。')
+            return render(request, 'patient/payment.html', {
+                'patient': patient,
+                'invoice': invoice,
+                'paid_amount': paid_amount,
+                'remaining_amount': remaining_amount,
+            })
+    
+    context = {
+        'patient': patient,
+        'invoice': invoice,
+        'paid_amount': paid_amount,
+        'remaining_amount': remaining_amount,
+    }
+    return render(request, 'patient/payment.html', context)
+
+
+@login_required
+@role_required('patient')
+def patient_appointments(request):
+    """患者预约挂号列表"""
+    from patients.models import Appointment
+    from staff.models import StaffProfile
+    
+    patient = get_user_profile(request.user)
+    appointments = Appointment.objects.filter(patient=patient).order_by('-appointment_date', '-appointment_time')
+    
+    # 获取所有医生和科室（用于预约表单）
+    doctors = StaffProfile.objects.filter(role='doctor', is_active=True).order_by('department', 'name')
+    departments = StaffProfile.objects.filter(role='doctor', is_active=True).values_list('department', flat=True).distinct()
+    
+    context = {
+        'patient': patient,
+        'appointments': appointments,
+        'doctors': doctors,
+        'departments': departments,
+    }
+    return render(request, 'patient/appointments.html', context)
+
+
+@login_required
+@role_required('patient')
+def patient_appointment_create(request):
+    """患者创建预约"""
+    from patients.models import Appointment
+    from staff.models import StaffProfile
+    from django.contrib import messages
+    from django.utils import timezone
+    import random
+    import string
+    
+    patient = get_user_profile(request.user)
+    
+    if request.method == 'POST':
+        # 生成预约编号
+        appointment_no = f"APT{timezone.now().strftime('%Y%m%d')}{''.join(random.choices(string.digits, k=4))}"
+        while Appointment.objects.filter(appointment_no=appointment_no).exists():
+            appointment_no = f"APT{timezone.now().strftime('%Y%m%d')}{''.join(random.choices(string.digits, k=4))}"
+        
+        # 获取表单数据
+        doctor_id = request.POST.get('doctor')
+        department = request.POST.get('department', '')
+        appointment_date = request.POST.get('appointment_date')
+        appointment_time = request.POST.get('appointment_time')
+        reason = request.POST.get('reason', '')
+        
+        doctor = None
+        if doctor_id:
+            doctor = StaffProfile.objects.filter(id=doctor_id, role='doctor', is_active=True).first()
+        
+        # 创建预约
+        appointment = Appointment.objects.create(
+            appointment_no=appointment_no,
+            patient=patient,
+            doctor=doctor,
+            department=department,
+            appointment_date=appointment_date,
+            appointment_time=appointment_time,
+            reason=reason,
+            status='pending',
+        )
+        
+        messages.success(request, f'预约成功！预约编号：{appointment_no}，请等待医院确认。')
+        return redirect('patient_appointments')
+    
+    # GET 请求，显示预约表单
+    from django.utils import timezone
+    doctors = StaffProfile.objects.filter(role='doctor', is_active=True).order_by('department', 'name')
+    departments = StaffProfile.objects.filter(role='doctor', is_active=True).values_list('department', flat=True).distinct()
+    
+    context = {
+        'patient': patient,
+        'doctors': doctors,
+        'departments': departments,
+        'today': timezone.now().date(),
+    }
+    return render(request, 'patient/appointment_create.html', context)
+
+
+@login_required
+@role_required('patient')
+def patient_appointment_cancel(request, appointment_id):
+    """患者取消预约"""
+    from patients.models import Appointment
+    from django.shortcuts import get_object_or_404
+    from django.contrib import messages
+    
+    patient = get_user_profile(request.user)
+    appointment = get_object_or_404(
+        Appointment,
+        id=appointment_id,
+        patient=patient
+    )
+    
+    if appointment.status == 'cancelled':
+        messages.warning(request, '该预约已经取消。')
+    elif appointment.status == 'completed':
+        messages.warning(request, '该预约已完成，无法取消。')
+    else:
+        appointment.status = 'cancelled'
+        appointment.save()
+        messages.success(request, '预约已取消。')
+    
+    return redirect('patient_appointments')
+
+
+@login_required
+@role_required('patient')
+def patient_reports(request):
+    """患者查看检查报告列表"""
+    from patients.models import MedicalReport
+    
+    patient = get_user_profile(request.user)
+    reports = MedicalReport.objects.filter(patient=patient).order_by('-examination_date', '-created_at')
+    
+    context = {
+        'patient': patient,
+        'reports': reports,
+    }
+    return render(request, 'patient/reports.html', context)
+
+
+@login_required
+@role_required('patient')
+def patient_report_detail(request, report_id):
+    """患者查看检查报告详情"""
+    from patients.models import MedicalReport
+    from django.shortcuts import get_object_or_404
+    
+    patient = get_user_profile(request.user)
+    report = get_object_or_404(
+        MedicalReport,
+        id=report_id,
+        patient=patient
+    )
+    
+    context = {
+        'patient': patient,
+        'report': report,
+    }
+    return render(request, 'patient/report_detail.html', context)
 
 
 @login_required

@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 offset-md-1">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> 检查报告详情</h5>
+                <a href="{% url 'patient_reports' %}" class="btn btn-sm btn-outline-secondary">返回</a>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">基本信息</h6>
+                        <p><strong>报告编号：</strong>{{ report.report_no }}</p>
+                        <p><strong>报告类型：</strong><span class="badge bg-info">{{ report.get_report_type_display }}</span></p>
+                        <p><strong>检查项目：</strong>{{ report.title }}</p>
+                        <p><strong>检查科室：</strong>{{ report.department|default:"未指定" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">时间信息</h6>
+                        <p><strong>检查日期：</strong>{{ report.examination_date|date:"Y-m-d" }}</p>
+                        <p><strong>报告日期：</strong>{{ report.report_date|date:"Y-m-d"|default:"未指定" }}</p>
+                        <p><strong>开单医生：</strong>{{ report.doctor.name|default:"未指定" }}</p>
+                        {% if report.visit %}
+                            <p><strong>关联就诊：</strong>{{ report.visit.visit_no }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <hr>
+                
+                {% if report.findings %}
+                <div class="mb-3">
+                    <h6 class="text-muted">检查所见</h6>
+                    <div class="p-3 bg-light rounded">
+                        <p class="mb-0">{{ report.findings|linebreaks }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if report.conclusion %}
+                <div class="mb-3">
+                    <h6 class="text-muted">诊断结论/建议</h6>
+                    <div class="p-3 bg-light rounded">
+                        <p class="mb-0">{{ report.conclusion|linebreaks }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if report.notes %}
+                <div class="mb-3">
+                    <h6 class="text-muted">备注</h6>
+                    <p>{{ report.notes|linebreaks }}</p>
+                </div>
+                {% endif %}
+                
+                {% if report.attachment %}
+                <div class="mb-3">
+                    <h6 class="text-muted">报告附件</h6>
+                    <a href="{{ report.attachment.url }}" target="_blank" class="btn btn-outline-primary">
+                        <i class="bi bi-download"></i> 下载报告
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

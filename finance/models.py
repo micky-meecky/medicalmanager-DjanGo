@@ -83,15 +83,19 @@ class Invoice(models.Model):
 
 class Payment(models.Model):
     METHOD_CHOICES = [   # 支付方式，可选
+        ("wechat", "WeChat Pay"),   # 微信支付
+        ("alipay", "Alipay"),   # 支付宝
+        ("unionpay", "UnionPay"),   # 银联
+        ("visa", "Visa"),   # Visa
+        ("mastercard", "Mastercard"),   # 万事达
         ("cash", "Cash"),   # 现金
         ("card", "Card"),   # 刷卡
-        ("online", "Online"),   # 在线支付
         ("insurance", "Insurance"),   # 医保
     ]
 
     invoice = models.ForeignKey(Invoice, on_delete=models.PROTECT, related_name="payments")   # 发票，外键
     amount = models.DecimalField(max_digits=12, decimal_places=2)   # 支付金额
-    method = models.CharField(max_length=16, choices=METHOD_CHOICES, default="cash")   # 支付方式，可选
+    method = models.CharField(max_length=16, choices=METHOD_CHOICES, default="wechat")   # 支付方式，可选
     received_by = models.ForeignKey('staff.StaffProfile', on_delete=models.PROTECT, related_name="received_payments", null=True, blank=True)   # 收款人，外键，可选
     paid_at = models.DateTimeField(auto_now_add=True)   # 支付时间，自动添加
     note = models.CharField(max_length=255, blank=True, default="")   # 备注，可选

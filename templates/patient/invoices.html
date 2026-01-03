@@ -40,6 +40,9 @@
                                 </td>
                                 <td>
                                     <a href="{% url 'patient_invoice_detail' invoice.id %}" class="btn btn-sm btn-outline-info">查看详情</a>
+                                    {% if invoice.status == 'unpaid' %}
+                                        <a href="{% url 'patient_payment' invoice.id %}" class="btn btn-sm btn-success">支付</a>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}

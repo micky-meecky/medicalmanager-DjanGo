@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-credit-card"></i> 支付账单</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h6><i class="bi bi-info-circle"></i> 账单信息</h6>
+                    <p class="mb-1"><strong>发票编号：</strong>{{ invoice.invoice_no }}</p>
+                    <p class="mb-1"><strong>账单总额：</strong><span class="h5 text-primary">¥{{ invoice.total_amount|floatformat:2 }}</span></p>
+                    {% if paid_amount > 0 %}
+                        <p class="mb-1"><strong>已支付：</strong>¥{{ paid_amount|floatformat:2 }}</p>
+                    {% endif %}
+                    <p class="mb-0"><strong>待支付：</strong><span class="h5 text-warning">¥{{ remaining_amount|floatformat:2 }}</span></p>
+                </div>
+                
+                <form method="post" id="paymentForm">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">选择支付方式 <span class="text-danger">*</span></label>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-check payment-method-option">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="wechat" value="wechat" checked>
+                                    <label class="form-check-label w-100 p-3 border rounded" for="wechat" style="cursor: pointer;">
+                                        <i class="bi bi-wechat text-success" style="font-size: 2rem;"></i>
+                                        <div class="mt-2"><strong>微信支付</strong></div>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check payment-method-option">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="alipay" value="alipay">
+                                    <label class="form-check-label w-100 p-3 border rounded" for="alipay" style="cursor: pointer;">
+                                        <i class="bi bi-wallet2 text-primary" style="font-size: 2rem;"></i>
+                                        <div class="mt-2"><strong>支付宝</strong></div>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check payment-method-option">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="unionpay" value="unionpay">
+                                    <label class="form-check-label w-100 p-3 border rounded" for="unionpay" style="cursor: pointer;">
+                                        <i class="bi bi-credit-card text-info" style="font-size: 2rem;"></i>
+                                        <div class="mt-2"><strong>银联</strong></div>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check payment-method-option">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="visa" value="visa">
+                                    <label class="form-check-label w-100 p-3 border rounded" for="visa" style="cursor: pointer;">
+                                        <i class="bi bi-credit-card-2-front text-dark" style="font-size: 2rem;"></i>
+                                        <div class="mt-2"><strong>Visa</strong></div>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check payment-method-option">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="mastercard" value="mastercard">
+                                    <label class="form-check-label w-100 p-3 border rounded" for="mastercard" style="cursor: pointer;">
+                                        <i class="bi bi-credit-card-2-front text-danger" style="font-size: 2rem;"></i>
+                                        <div class="mt-2"><strong>万事达</strong></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="payment_amount" class="form-label fw-bold">支付金额 <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text">¥</span>
+                            <input type="number" class="form-control" id="payment_amount" name="payment_amount" 
+                                   value="{{ remaining_amount|floatformat:2 }}" 
+                                   min="0.01" 
+                                   max="{{ remaining_amount|floatformat:2 }}" 
+                                   step="0.01" 
+                                   required>
+                        </div>
+                        <small class="text-muted">最多可支付 ¥{{ remaining_amount|floatformat:2 }}</small>
+                        <input type="hidden" name="payment_method_display" id="payment_method_display" value="微信支付">
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> 
+                        <strong>注意：</strong>这是演示系统，支付将直接完成。实际系统中需要对接第三方支付平台（如微信支付、支付宝等）进行真实支付。
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'patient_invoice_detail' invoice.id %}" class="btn btn-secondary">取消</a>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-circle"></i> 确认支付
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.payment-method-option input[type="radio"] {
+    display: none;
+}
+.payment-method-option label {
+    transition: all 0.3s;
+}
+.payment-method-option input[type="radio"]:checked + label {
+    background-color: #e7f3ff;
+    border-color: #0d6efd !important;
+    border-width: 2px !important;
+}
+.payment-method-option label:hover {
+    background-color: #f8f9fa;
+}
+</style>
+
+<script>
+// 更新支付方式显示名称
+document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const methodNames = {
+            'wechat': '微信支付',
+            'alipay': '支付宝',
+            'unionpay': '银联',
+            'visa': 'Visa',
+            'mastercard': '万事达'
+        };
+        document.getElementById('payment_method_display').value = methodNames[this.value] || '微信支付';
+    });
+});
+
+// 限制支付金额
+document.getElementById('payment_amount').addEventListener('input', function() {
+    const maxAmount = parseFloat('{{ remaining_amount }}');
+    const inputAmount = parseFloat(this.value);
+    if (inputAmount > maxAmount) {
+        this.value = maxAmount.toFixed(2);
+    }
+});
+</script>
+{% endblock %}
+

@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-calendar-plus"></i> 新建预约</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="department" class="form-label">预约科室 <span class="text-danger">*</span></label>
+                        <select class="form-select" id="department" name="department" required>
+                            <option value="">请选择科室</option>
+                            {% for dept in departments %}
+                                <option value="{{ dept }}">{{ dept }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="doctor" class="form-label">预约医生</label>
+                        <select class="form-select" id="doctor" name="doctor">
+                            <option value="">请选择医生（可选）</option>
+                            {% for doctor in doctors %}
+                                <option value="{{ doctor.id }}" data-department="{{ doctor.department }}">
+                                    {{ doctor.name }} - {{ doctor.department }} - {{ doctor.position }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">选择科室后，医生列表会自动筛选</small>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="appointment_date" class="form-label">预约日期 <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="appointment_date" name="appointment_date" required min="{{ today|date:'Y-m-d' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="appointment_time" class="form-label">预约时间 <span class="text-danger">*</span></label>
+                            <input type="time" class="form-control" id="appointment_time" name="appointment_time" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">预约原因/症状描述</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="4" placeholder="请简要描述您的症状或预约原因..."></textarea>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 预约提交后，请等待医院确认。您可以在"我的预约"中查看预约状态。
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'patient_appointments' %}" class="btn btn-secondary">取消</a>
+                        <button type="submit" class="btn btn-primary">提交预约</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 科室选择后自动筛选医生
+document.getElementById('department').addEventListener('change', function() {
+    const selectedDept = this.value;
+    const doctorSelect = document.getElementById('doctor');
+    const options = doctorSelect.querySelectorAll('option');
+    
+    options.forEach(option => {
+        if (option.value === '') {
+            option.style.display = 'block';
+        } else {
+            const optionDept = option.getAttribute('data-department');
+            if (selectedDept === '' || optionDept === selectedDept) {
+                option.style.display = 'block';
+            } else {
+                option.style.display = 'none';
+            }
+        }
+    });
+    
+    // 如果当前选中的医生不在筛选后的列表中，清空选择
+    if (doctorSelect.value && doctorSelect.options[doctorSelect.selectedIndex].style.display === 'none') {
+        doctorSelect.value = '';
+    }
+});
+</script>
+{% endblock %}
+

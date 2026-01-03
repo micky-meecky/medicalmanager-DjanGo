@@ -128,6 +128,6 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 # Authentication settings
-LOGIN_URL = '/login/'
+LOGIN_URL = '/?login=1'
 LOGIN_REDIRECT_URL = '/dashboard/'
-LOGOUT_REDIRECT_URL = '/login/'
+LOGOUT_REDIRECT_URL = '/'
